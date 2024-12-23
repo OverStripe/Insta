@@ -1,10 +1,10 @@
 import asyncio
-from instagrapi import Client
-import requests
 import random
-import time
+import requests
 import logging
+import time
 from datetime import datetime
+from instagrapi import Client
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -13,12 +13,11 @@ from telegram.ext import (
 )
 
 # ---------------------------
-# Configuration
+# CONFIGURATION
 # ---------------------------
 
 # Telegram Configuration
-TELEGRAM_TOKEN = '7385049957:AAGdNWEGssexyG7_K5slL5jP4bMKIHFBPYs'
-ADMIN_CHAT_ID = '-1002284784547'
+TELEGRAM_TOKEN = '7385049957:AAGhwdyRJiyPVc8RwTKdqJ3n8T8cFcw8O2c'
 
 # Instagram Configuration
 cl = Client()
@@ -41,7 +40,7 @@ Stay tuned for more updates, and don't forget to **like, share, and comment**! �
 #Trending #Reels #CreativeContent
 """
 
-# Logging Setup
+# Logging Configuration
 logging.basicConfig(
     filename='bot_activity.log',
     level=logging.INFO,
@@ -50,40 +49,40 @@ logging.basicConfig(
 
 
 # ---------------------------
-# Utility Functions
+# UTILITY FUNCTIONS
 # ---------------------------
 
-async def notify_admin(context: ContextTypes.DEFAULT_TYPE, message: str):
-    """Send a notification to the admin."""
+async def notify_user(update: Update, message: str):
+    """Send a notification to the user who triggered the command."""
     try:
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=message)
-        logging.info(f"Notification sent: {message}")
+        await update.message.reply_text(message)
+        logging.info(f"Notification sent to user: {message}")
     except Exception as e:
         logging.error(f"Failed to send notification: {e}")
 
 
 # ---------------------------
-# Instagram Functions
+# INSTAGRAM FUNCTIONS
 # ---------------------------
 
-async def instagram_login(username: str, password: str, context: ContextTypes.DEFAULT_TYPE):
+async def instagram_login(username: str, password: str, update: Update):
     """Log in to Instagram dynamically."""
     global IS_LOGGED_IN
     try:
         cl.login(username, password)
         IS_LOGGED_IN = True
-        logging.info("Logged in to Instagram successfully.")
-        await notify_admin(context, "✅ Successfully logged in to Instagram!")
+        logging.info("Successfully logged into Instagram.")
+        await notify_user(update, "✅ Successfully logged in to Instagram!")
         return True
     except Exception as e:
         IS_LOGGED_IN = False
         logging.error(f"Failed to log in to Instagram: {e}")
-        await notify_admin(context, f"❌ Failed to log in: {e}")
+        await notify_user(update, f"❌ Failed to log in: {e}")
         return False
 
 
 def get_latest_reels(username, amount=5):
-    """Fetch the latest reels from a user."""
+    """Fetch the latest reels from an Instagram user."""
     try:
         user_id = cl.user_id_from_username(username)
         reels = cl.user_clips(user_id, amount=amount)
@@ -108,7 +107,7 @@ def download_reel(video_url, filename="reel.mp4"):
     return None
 
 
-async def post_reel(video_path, caption, context: ContextTypes.DEFAULT_TYPE):
+async def post_reel(video_path, caption, update: Update):
     """Post a reel to Instagram."""
     try:
         cl.clip_upload(
@@ -116,16 +115,16 @@ async def post_reel(video_path, caption, context: ContextTypes.DEFAULT_TYPE):
             caption=caption,
         )
         logging.info("Reel posted successfully.")
-        await notify_admin(context, "✅ Reel posted successfully on Instagram!")
+        await notify_user(update, "✅ Reel posted successfully on Instagram!")
     except Exception as e:
         logging.error(f"Failed to post reel: {e}")
-        await notify_admin(context, f"❌ Failed to post reel: {e}")
+        await notify_user(update, f"❌ Failed to post reel: {e}")
 
 
-async def process_reels(context: ContextTypes.DEFAULT_TYPE):
+async def process_reels(update: Update):
     """Fetch, download, and post shuffled reels."""
     if not IS_LOGGED_IN:
-        await notify_admin(context, "❌ Please log in to Instagram using /login.")
+        await notify_user(update, "❌ Please log in to Instagram using /login.")
         return
 
     selected_reels = []
@@ -141,15 +140,15 @@ async def process_reels(context: ContextTypes.DEFAULT_TYPE):
         video_url = reel.video_url
         video_path = download_reel(video_url)
         if video_path:
-            await post_reel(video_path, CAPTION_TEMPLATE, context)
+            await post_reel(video_path, CAPTION_TEMPLATE, update)
             uploaded_count += 1
             await asyncio.sleep(random.randint(1800, 3600))  # 30–60 min delay
 
-    await notify_admin(context, f"✅ Uploaded {uploaded_count} reels today!")
+    await notify_user(update, f"✅ Uploaded {uploaded_count} reels today!")
 
 
 # ---------------------------
-# Telegram Commands
+# TELEGRAM COMMANDS
 # ---------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -157,48 +156,41 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 **Instagram Bot Commands:**\n"
         "/start - Show help\n"
         "/login <username> <password> - Log in to Instagram\n"
+        "/update_caption - Update the caption template\n"
+        "/add_account <username> - Add a target Instagram account\n"
+        "/list_accounts - List all target accounts\n"
+        "/remove_account <username> - Remove a target account\n"
         "/run - Run the bot manually"
     )
 
 
 async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 2:
-        await update.message.reply_text("❌ Usage: /login <username> <password>")
+        await notify_user(update, "❌ Usage: /login <username> <password>")
         return
 
     username, password = context.args
-    success = await instagram_login(username, password, context)
+    success = await instagram_login(username, password, update)
     if success:
-        await update.message.reply_text("✅ Logged in successfully!")
+        await notify_user(update, "✅ Logged in successfully!")
     else:
-        await update.message.reply_text("❌ Failed to log in.")
+        await notify_user(update, "❌ Failed to log in.")
 
 
 async def run_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not IS_LOGGED_IN:
-        await update.message.reply_text("❌ Please log in using /login first.")
+        await notify_user(update, "❌ Please log in using /login first.")
         return
 
-    await update.message.reply_text("🚀 Running the bot manually...")
-    await process_reels(context)
-    await update.message.reply_text("✅ Bot run completed!")
+    await notify_user(update, "🚀 Running the bot manually...")
+    await process_reels(update)
+    await notify_user(update, "✅ Bot run completed!")
 
 
 # ---------------------------
-# Main Function
+# MAIN FUNCTION
 # ---------------------------
 
 async def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(CommandHandler('login', login))
-    app.add_handler(CommandHandler('run', run_bot))
-
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    await app.updater.wait_for_stop()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+  
