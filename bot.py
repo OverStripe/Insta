@@ -1,10 +1,9 @@
 import asyncio
-import random
-import requests
-import logging
-import time
-from datetime import datetime
 from instagrapi import Client
+import requests
+import random
+import logging
+from datetime import datetime
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -43,7 +42,7 @@ Stay tuned for more updates, and don't forget to **like, share, and comment**! �
 # Logging Configuration
 logging.basicConfig(
     filename='bot_activity.log',
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -156,10 +155,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 **Instagram Bot Commands:**\n"
         "/start - Show help\n"
         "/login <username> <password> - Log in to Instagram\n"
-        "/update_caption - Update the caption template\n"
-        "/add_account <username> - Add a target Instagram account\n"
-        "/list_accounts - List all target accounts\n"
-        "/remove_account <username> - Remove a target account\n"
+        "/status - Check bot status\n"
         "/run - Run the bot manually"
     )
 
@@ -170,11 +166,14 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     username, password = context.args
-    success = await instagram_login(username, password, update)
-    if success:
-        await notify_user(update, "✅ Logged in successfully!")
-    else:
-        await notify_user(update, "❌ Failed to log in.")
+    await instagram_login(username, password, update)
+
+
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Check bot status."""
+    status_message = "✅ Bot is running.\n"
+    status_message += f"🔗 Instagram Login: {'✅ Connected' if IS_LOGGED_IN else '❌ Not Connected'}"
+    await notify_user(update, status_message)
 
 
 async def run_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -193,4 +192,16 @@ async def run_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-  
+    app.add_handler(CommandHandler('start', start))
+    app.add_handler(CommandHandler('login', login))
+    app.add_handler(CommandHandler('status', status))
+    app.add_handler(CommandHandler('run', run_bot))
+
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.wait_for_stop()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
