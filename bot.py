@@ -17,8 +17,8 @@ from telegram.ext import (
 # ---------------------------
 
 # Telegram Bot Token
-TELEGRAM_TOKEN = 'your_telegram_bot_token'
-ADMIN_CHAT_ID = 'your_telegram_chat_id'  # Replace with your chat ID
+TELEGRAM_TOKEN = '7385049957:AAFeoxlOwM7URcMfCnl2AlcXJX-Rs4DZZUw'
+ADMIN_CHAT_ID = '-1002284784547'  # Replace with your chat ID
 
 # Instagram Client
 cl = Client()
