@@ -17,7 +17,7 @@ from telegram.ext import (
 # ---------------------------
 
 # Telegram Configuration
-TELEGRAM_TOKEN = '7385049957:AAFeoxlOwM7URcMfCnl2AlcXJX-Rs4DZZUw'
+TELEGRAM_TOKEN = '7385049957:AAGdNWEGssexyG7_K5slL5jP4bMKIHFBPYs'
 ADMIN_CHAT_ID = '-1002284784547'
 
 # Instagram Configuration
