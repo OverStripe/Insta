@@ -2,3 +2,4 @@ instagrapi==1.19.5
 requests==2.31.0
 python-telegram-bot==20.6
 schedule==1.2.1
+pillow>=10.0.0
